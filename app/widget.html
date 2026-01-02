@@ -1,0 +1,1862 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Day Calendar View</title>
+    <link
+  rel="stylesheet"
+  href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css"
+/>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+           font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background: #f5f7fa;
+            padding: 20px;
+        }
+
+        .calendar-container {
+            max-width: 1600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .calendar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 30px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .view-toggle {
+            display: flex;
+            gap: 0;
+            background: #f3f4f6;
+            border-radius: 6px;
+            overflow: hidden;
+        }
+
+        .view-toggle button {
+            padding: 8px 20px;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+
+        .view-toggle button.active {
+            background: #4f46e5;
+            color: white;
+        }
+
+        .date-title {
+            font-size: 16px;
+            font-weight: 500;
+            color: #1f2937;
+        }
+
+        .header-controls {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .nav-btn {
+            padding: 8px 12px;
+            border: 1px solid #d1d5db;
+            background: white;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+
+        .nav-btn:hover {
+            background: #f9fafb;
+        }
+
+        .calendar-icon {
+            padding: 8px;
+            border: 1px solid #d1d5db;
+            background: white;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        .mini-calendar {
+            position: absolute;
+            right: 30px;
+            top: 70px;
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 15px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            z-index: 100;
+            display: none;
+        }
+
+        .mini-calendar.active {
+            display: block;
+        }
+
+        .mini-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .mini-nav {
+            display: flex;
+            gap: 10px;
+        }
+
+        .mini-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 5px;
+            text-align: center;
+        }
+
+        .mini-day-label {
+            font-size: 11px;
+            color: #6b7280;
+            font-weight: 600;
+            padding: 5px;
+        }
+
+        .mini-day {
+            padding: 8px;
+            font-size: 13px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .mini-day:not(.other-month):hover {
+            background: #f3f4f6;
+        }
+
+        .mini-day.other-month {
+            color: #d1d5db;
+            cursor: default;
+        }
+
+        .mini-day.today {
+            background: #dbeafe;
+            color: #1e40af;
+            font-weight: 600;
+        }
+
+        .mini-day.selected {
+            background: #4f46e5;
+            color: white;
+            font-weight: 600;
+        }
+
+        /* Search Panel Styles */
+        .search-panel {
+            position: fixed;
+            right: -400px;
+            top: 0;
+            width: 400px;
+            height: 100vh;
+            background: white;
+            box-shadow: -2px 0 8px rgba(0,0,0,0.1);
+            z-index: 200;
+            transition: right 0.3s ease;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .search-panel.active {
+            right: 0;
+        }
+
+        .search-header {
+            padding: 20px;
+            border-bottom: 1px solid #e5e7eb;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .search-header h2 {
+            font-size: 18px;
+            font-weight: 600;
+            color: #1f2937;
+        }
+
+        .close-search {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 24px;
+            color: #6b7280;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .close-search:hover {
+            color: #1f2937;
+        }
+
+        .search-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+        }
+
+        .search-filter {
+            margin-bottom: 15px;
+        }
+
+        .search-filter label {
+            display: flex;
+            align-items: center;
+            padding: 10px 0;
+            cursor: pointer;
+            color: #374151;
+            font-size: 14px;
+        }
+
+        .search-filter input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            margin-right: 12px;
+            cursor: pointer;
+            accent-color: #6b46c1;
+        }
+
+        .filter-inputs {
+            display: none;
+            margin-left: 30px;
+            margin-top: 10px;
+            margin-bottom: 15px;
+        }
+
+        .filter-inputs.active {
+            display: block;
+        }
+
+        .filter-input-group {
+            margin-bottom: 12px;
+        }
+
+        .filter-input-group:last-child {
+            margin-bottom: 0;
+        }
+
+        .filter-input-group label {
+            display: block;
+            font-size: 12px;
+            color: #6b7280;
+            margin-bottom: 6px;
+            font-weight: 500;
+            padding: 0;
+        }
+
+        .filter-select-wrapper {
+            position: relative;
+            width: 100%;
+        }
+
+        .filter-select {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 4px;
+            font-size: 14px;
+            font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background: white;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            user-select: none;
+        }
+
+        .filter-select:hover {
+            border-color: #9ca3af;
+        }
+
+        .filter-select.active {
+            border-color: #6b46c1;
+            box-shadow: 0 0 0 2px rgba(107, 70, 193, 0.2);
+        }
+
+        .filter-select-arrow {
+            width: 12px;
+            height: 12px;
+            transition: transform 0.2s;
+        }
+
+        .filter-select.active .filter-select-arrow {
+            transform: rotate(180deg);
+        }
+
+        .filter-options {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            margin-top: 4px;
+            background: white;
+            border: 1px solid #d1d5db;
+            border-radius: 4px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            max-height: 200px;
+            overflow-y: auto;
+            z-index: 1000;
+            display: none;
+        }
+
+        .filter-options.active {
+            display: block;
+        }
+
+        .filter-option {
+            padding: 8px 12px;
+            font-size: 14px;
+            font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            cursor: pointer;
+            transition: background-color 0.15s;
+        }
+
+        .filter-option:hover {
+            background-color: #f6f6f6;
+        }
+
+        .filter-option.selected {
+            background-color: #4285f4;
+            color: white;
+        }
+
+        .filter-option.selected:hover {
+            background-color: #3367d6;
+        }
+
+        /* Scrollbar styling for dropdown */
+        .filter-options::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .filter-options::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 4px;
+        }
+
+        .filter-options::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 4px;
+        }
+
+        .filter-options::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+
+        .tags-input-container {
+            width: 100%;
+            min-height: 80px;
+            padding: 8px;
+            border: 2px solid #6b46c1;
+            border-radius: 4px;
+            background: white;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            align-items: flex-start;
+            cursor: text;
+        }
+
+        .tags-input-container:focus-within {
+            outline: none;
+            border-color: #6b46c1;
+            box-shadow: 0 0 0 2px rgba(107, 70, 193, 0.2);
+        }
+
+        .tags-input-container.hidden {
+            display: none;
+        }
+
+        .tag {
+            display: inline-flex;
+            align-items: center;
+            background: #e9d5ff;
+            color: #6b21a8;
+            padding: 4px 8px;
+            border-radius: 3px;
+            font-size: 13px;
+            gap: 6px;
+        }
+
+        .tag-remove {
+            background: none;
+            border: none;
+            color: #6b21a8;
+            cursor: pointer;
+            padding: 0;
+            font-size: 16px;
+            line-height: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 16px;
+            height: 16px;
+        }
+
+        .tag-remove:hover {
+            color: #581c87;
+        }
+
+        .tags-input-container input {
+            border: none;
+            outline: none;
+            flex: 1;
+            min-width: 120px;
+            padding: 4px;
+            font-size: 14px;
+            font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        .tags-input-container input::placeholder {
+            color: #9ca3af;
+        }
+
+        .tag {
+            display: inline-flex;
+            align-items: center;
+            background: #e9d5ff;
+            color: #6b21a8;
+            padding: 4px 8px;
+            border-radius: 3px;
+            font-size: 13px;
+            font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            gap: 6px;
+        }
+
+        .search-footer {
+            padding: 20px;
+            border-top: 1px solid #e5e7eb;
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        .search-btn {
+            background: #4f46e5;
+            color: white;
+            border: none;
+            padding: 10px 30px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: background 0.2s;
+        }
+
+        .search-btn:hover {
+            background: #4338ca;
+        }
+
+        .search-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.3);
+            z-index: 199;
+            display: none;
+        }
+
+        .search-overlay.active {
+            display: block;
+        }
+
+        .hour-header {
+            display: flex;
+            border-bottom: 2px solid #e5e7eb;
+            background: white;
+            z-index: 30;
+            min-width: 2400px;
+        }
+
+        .hour-label {
+            flex: 0 0 100px;
+            min-width: 100px;
+            padding: 12px 8px;
+            text-align: center;
+            font-size: 15px;
+            color: #000;
+            font-weight: 500;
+            border-right: 1px solid #e5e7eb;
+            font-weight: bolder;
+        }
+
+        .calendar-wrapper {
+            overflow-x: auto;
+            overflow-y: auto;
+        }
+
+        .calendar-body {
+            display: flex;
+            position: relative;
+            min-height: 800px;
+        }
+
+        .calendar-grid {
+            flex: 1;
+            display: flex;
+            position: relative;
+            min-width: 2400px;
+        }
+
+        .hour-column {
+            flex: 0 0 100px;
+            min-width: 100px;
+            border-right: 1px solid #e5e7eb;
+            position: relative;
+        }
+
+        .hour-column-inner {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            pointer-events: none;
+        }
+
+        .quarter-line {
+            border-right: 1px dotted #d1d5db;
+        }
+
+        .quarter-line:last-child {
+            border-right: none;
+        }
+
+        .quarter-slot {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            padding: 2px;
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+            pointer-events: auto;
+        }
+
+        .quarter-slot[data-quarter="0"] {
+            left: 0;
+            width: 25%;
+        }
+
+        .quarter-slot[data-quarter="1"] {
+            left: 25%;
+            width: 25%;
+        }
+
+        .quarter-slot[data-quarter="2"] {
+            left: 50%;
+            width: 25%;
+        }
+
+        .quarter-slot[data-quarter="3"] {
+            left: 75%;
+            width: 25%;
+        }
+
+        .events-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        .event {
+            position: absolute;
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+            border-radius: 4px;
+            padding: 6px 8px;
+            color: white;
+            font-size: 11px;
+            cursor: move;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+            user-select: none;
+            pointer-events: auto;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .event:hover {
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+            z-index: 10;
+        }
+
+        .event.dragging {
+            opacity: 0.5;
+        }
+
+        .event-title {
+            font-weight: 600;
+            margin-bottom: 2px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            line-height: 1.2;
+        }
+
+        .event-time {
+            font-size: 10px;
+            opacity: 0.9;
+            white-space: nowrap;
+            line-height: 1.2;
+        }
+
+        .drop-highlight {
+            background-color: rgba(99, 102, 241, 0.15) !important;
+        }
+
+        /* Snackbar Styles */
+        .snackbar {
+            visibility: hidden;
+            min-width: 250px;
+            background-color: #323232;
+            color: #fff;
+            text-align: center;
+            border-radius: 4px;
+            padding: 16px;
+            position: fixed;
+            z-index: 300;
+            left: 50%;
+            bottom: 30px;
+            transform: translateX(-50%);
+            font-size: 14px;
+            box-shadow: 0 3px 5px -1px rgba(0,0,0,0.2), 0 6px 10px 0 rgba(0,0,0,0.14), 0 1px 18px 0 rgba(0,0,0,0.12);
+        }
+
+        .snackbar.show {
+            visibility: visible;
+            animation: fadein 0.3s, fadeout 0.3s 2.7s;
+        }
+
+        @keyframes fadein {
+            from {
+                bottom: 0;
+                opacity: 0;
+            }
+            to {
+                bottom: 30px;
+                opacity: 1;
+            }
+        }
+
+        @keyframes fadeout {
+            from {
+                bottom: 30px;
+                opacity: 1;
+            }
+            to {
+                bottom: 0;
+                opacity: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Search Overlay -->
+    <div class="search-overlay" id="searchOverlay" onclick="toggleSearch()"></div>
+
+    <!-- Search Panel -->
+    <div class="search-panel" id="searchPanel">
+        <div class="search-header">
+            <h2>Search</h2>
+            <button class="close-search" onclick="toggleSearch()">×</button>
+        </div>
+        
+        <div class="search-body">
+            <div class="search-filter">
+                <label>
+                    <input type="checkbox" name="eType" onchange="toggleFilterInputs('eType')">
+                    EType
+                </label>
+                <div class="filter-inputs" id="eType-inputs">
+                    <div class="filter-input-group">
+                        <div class="filter-select-wrapper">
+                            <div class="filter-select" id="eType-filter-display" onclick="toggleFilterDropdown('eType')">
+                                <span id="eType-filter-text">Contains</span>
+                                <svg class="filter-select-arrow" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 12">
+                                    <path fill="#6b7280" d="M6 9L1 4h10z"/>
+                                </svg>
+                            </div>
+                            <div class="filter-options" id="eType-filter-options">
+                                <div class="filter-option" onclick="selectFilterOption('eType', 'contains', this)">Contains</div>
+                                <div class="filter-option" onclick="selectFilterOption('eType', 'is', this)">Is</div>
+                                <div class="filter-option" onclick="selectFilterOption('eType', 'isNot', this)">Is Not</div>
+                                <div class="filter-option" onclick="selectFilterOption('eType', 'isEmpty', this)">Is Empty</div>
+                                <div class="filter-option" onclick="selectFilterOption('eType', 'isNotEmpty', this)">Is Not Empty</div>
+                                <div class="filter-option" onclick="selectFilterOption('eType', 'startsWith', this)">Starts With</div>
+                                <div class="filter-option" onclick="selectFilterOption('eType', 'endsWith', this)">Ends With</div>
+                            </div>
+                            <input type="hidden" id="eType-filter" value="contains">
+                        </div>
+                    </div>
+                    <div class="filter-input-group">
+                        <div class="tags-input-container" id="eType-tags-container" onclick="focusTagInput('eType')">
+                            <input type="text" id="eType-tags-input" placeholder="" onkeydown="handleTagInput(event, 'eType')">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            
+            <div class="search-filter">
+                <label>
+                    <input type="checkbox" name="persons" onchange="toggleFilterInputs('persons')">
+                    Person(s)
+                </label>
+                <div class="filter-inputs" id="persons-inputs">
+                    <div class="filter-input-group">
+                        <div class="filter-select-wrapper">
+                            <div class="filter-select" id="persons-filter-display" onclick="toggleFilterDropdown('persons')">
+                                <span id="persons-filter-text">Contains</span>
+                                <svg class="filter-select-arrow" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 12">
+                                    <path fill="#6b7280" d="M6 9L1 4h10z"/>
+                                </svg>
+                            </div>
+                            <div class="filter-options" id="persons-filter-options">
+                                <div class="filter-option" onclick="selectFilterOption('persons', 'contains', this)">Contains</div>
+                                <div class="filter-option" onclick="selectFilterOption('persons', 'is', this)">Is</div>
+                                <div class="filter-option" onclick="selectFilterOption('persons', 'isNot', this)">Is Not</div>
+                                <div class="filter-option" onclick="selectFilterOption('persons', 'isEmpty', this)">Is Empty</div>
+                                <div class="filter-option" onclick="selectFilterOption('persons', 'isNotEmpty', this)">Is Not Empty</div>
+                                <div class="filter-option" onclick="selectFilterOption('persons', 'startsWith', this)">Starts With</div>
+                                <div class="filter-option" onclick="selectFilterOption('persons', 'endsWith', this)">Ends With</div>
+                            </div>
+                            <input type="hidden" id="persons-filter" value="contains">
+                        </div>
+                    </div>
+                    <div class="filter-input-group">
+                        <div class="tags-input-container" id="persons-tags-container" onclick="focusTagInput('persons')">
+                            <input type="text" id="persons-tags-input" placeholder="" onkeydown="handleTagInput(event, 'persons')">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="search-filter">
+                <label>
+                    <input type="checkbox" name="from" onchange="toggleFilterInputs('from')">
+                    From
+                </label>
+                <div class="filter-inputs" id="from-inputs">
+                    <div class="filter-input-group">
+                        <div class="filter-select-wrapper">
+                            <div class="filter-select" id="from-filter-display" onclick="toggleFilterDropdown('from')">
+                                <span id="from-filter-text">Contains</span>
+                                <svg class="filter-select-arrow" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 12">
+                                    <path fill="#6b7280" d="M6 9L1 4h10z"/>
+                                </svg>
+                            </div>
+                            <div class="filter-options" id="from-filter-options">
+                                <div class="filter-option " onclick="selectFilterOption('from', 'contains', this)">Contains</div>
+                                <div class="filter-option" onclick="selectFilterOption('from', 'is', this)">Is</div>
+                                <div class="filter-option" onclick="selectFilterOption('from', 'isNot', this)">Is Not</div>
+                                <div class="filter-option" onclick="selectFilterOption('from', 'isEmpty', this)">Is Empty</div>
+                                <div class="filter-option" onclick="selectFilterOption('from', 'isNotEmpty', this)">Is Not Empty</div>
+                                <div class="filter-option" onclick="selectFilterOption('from', 'startsWith', this)">Starts With</div>
+                                <div class="filter-option" onclick="selectFilterOption('from', 'endsWith', this)">Ends With</div>
+                            </div>
+                            <input type="hidden" id="from-filter" value="contains">
+                        </div>
+                    </div>
+                    <div class="filter-input-group">
+                        <div class="tags-input-container" id="from-tags-container" onclick="focusTagInput('from')">
+                            <input type="text" id="from-tags-input" placeholder="" onkeydown="handleTagInput(event, 'from')">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="search-filter">
+                <label>
+                    <input type="checkbox" name="to" onchange="toggleFilterInputs('to')">
+                    To
+                </label>
+                <div class="filter-inputs" id="to-inputs">
+                    <div class="filter-input-group">
+                        <div class="filter-select-wrapper">
+                            <div class="filter-select" id="to-filter-display" onclick="toggleFilterDropdown('to')">
+                                <span id="to-filter-text">Contains</span>
+                                <svg class="filter-select-arrow" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 12">
+                                    <path fill="#6b7280" d="M6 9L1 4h10z"/>
+                                </svg>
+                            </div>
+                            <div class="filter-options" id="to-filter-options">
+                                <div class="filter-option " onclick="selectFilterOption('to', 'contains', this)">Contains</div>
+                                <div class="filter-option" onclick="selectFilterOption('to', 'is', this)">Is</div>
+                                <div class="filter-option" onclick="selectFilterOption('to', 'isNot', this)">Is Not</div>
+                                <div class="filter-option" onclick="selectFilterOption('to', 'isEmpty', this)">Is Empty</div>
+                                <div class="filter-option" onclick="selectFilterOption('to', 'isNotEmpty', this)">Is Not Empty</div>
+                                <div class="filter-option" onclick="selectFilterOption('to', 'startsWith', this)">Starts With</div>
+                                <div class="filter-option" onclick="selectFilterOption('to', 'endsWith', this)">Ends With</div>
+                            </div>
+                            <input type="hidden" id="to-filter" value="contains">
+                        </div>
+                    </div>
+                    <div class="filter-input-group">
+                        <div class="tags-input-container" id="to-tags-container" onclick="focusTagInput('to')">
+                            <input type="text" id="to-tags-input" placeholder="" onkeydown="handleTagInput(event, 'to')">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="search-filter">
+                <label>
+                    <input type="checkbox" name="type" onchange="toggleFilterInputs('type')">
+                    Type
+                </label>
+                <div class="filter-inputs" id="type-inputs">
+                    <div class="filter-input-group">
+                        <div class="filter-select-wrapper">
+                            <div class="filter-select" id="type-filter-display" onclick="toggleFilterDropdown('type')">
+                                <span id="type-filter-text">Contains</span>
+                                <svg class="filter-select-arrow" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 12">
+                                    <path fill="#6b7280" d="M6 9L1 4h10z"/>
+                                </svg>
+                            </div>
+                            <div class="filter-options" id="type-filter-options">
+                                <div class="filter-option " onclick="selectFilterOption('type', 'contains', this)">Contains</div>
+                                <div class="filter-option" onclick="selectFilterOption('type', 'is', this)">Is</div>
+                                <div class="filter-option" onclick="selectFilterOption('type', 'isNot', this)">Is Not</div>
+                                <div class="filter-option" onclick="selectFilterOption('type', 'isEmpty', this)">Is Empty</div>
+                                <div class="filter-option" onclick="selectFilterOption('type', 'isNotEmpty', this)">Is Not Empty</div>
+                                <div class="filter-option" onclick="selectFilterOption('type', 'startsWith', this)">Starts With</div>
+                                <div class="filter-option" onclick="selectFilterOption('type', 'endsWith', this)">Ends With</div>
+                            </div>
+                            <input type="hidden" id="type-filter" value="contains">
+                        </div>
+                    </div>
+                    <div class="filter-input-group">
+                        <div class="tags-input-container" id="type-tags-container" onclick="focusTagInput('type')">
+                            <input type="text" id="type-tags-input" placeholder="" onkeydown="handleTagInput(event, 'type')">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="search-filter">
+                <label>
+                    <input type="checkbox" name="service" onchange="toggleFilterInputs('service')">
+                    Service
+                </label>
+                <div class="filter-inputs" id="service-inputs">
+                    <div class="filter-input-group">
+                        <div class="filter-select-wrapper">
+                            <div class="filter-select" id="service-filter-display" onclick="toggleFilterDropdown('service')">
+                                <span id="service-filter-text">Contains</span>
+                                <svg class="filter-select-arrow" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 12">
+                                    <path fill="#6b7280" d="M6 9L1 4h10z"/>
+                                </svg>
+                            </div>
+                            <div class="filter-options" id="service-filter-options">
+                                <div class="filter-option " onclick="selectFilterOption('service', 'contains', this)">Contains</div>
+                                <div class="filter-option" onclick="selectFilterOption('service', 'is', this)">Is</div>
+                                <div class="filter-option" onclick="selectFilterOption('service', 'isNot', this)">Is Not</div>
+                                <div class="filter-option" onclick="selectFilterOption('service', 'isEmpty', this)">Is Empty</div>
+                                <div class="filter-option" onclick="selectFilterOption('service', 'isNotEmpty', this)">Is Not Empty</div>
+                                <div class="filter-option" onclick="selectFilterOption('service', 'startsWith', this)">Starts With</div>
+                                <div class="filter-option" onclick="selectFilterOption('service', 'endsWith', this)">Ends With</div>
+                            </div>
+                            <input type="hidden" id="service-filter" value="contains">
+                        </div>
+                    </div>
+                    <div class="filter-input-group">
+                        <div class="tags-input-container" id="service-tags-container" onclick="focusTagInput('service')">
+                            <input type="text" id="service-tags-input" placeholder="" onkeydown="handleTagInput(event, 'service')">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="search-filter">
+                <label>
+                    <input type="checkbox" name="staff" onchange="toggleFilterInputs('staff')">
+                    Staff
+                </label>
+                <div class="filter-inputs" id="staff-inputs">
+                    <div class="filter-input-group">
+                        <div class="filter-select-wrapper">
+                            <div class="filter-select" id="staff-filter-display" onclick="toggleFilterDropdown('staff')">
+                                <span id="staff-filter-text">Contains</span>
+                                <svg class="filter-select-arrow" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 12">
+                                    <path fill="#6b7280" d="M6 9L1 4h10z"/>
+                                </svg>
+                            </div>
+                            <div class="filter-options" id="staff-filter-options">
+                                <div class="filter-option " onclick="selectFilterOption('staff', 'contains', this)">Contains</div>
+                                <div class="filter-option" onclick="selectFilterOption('staff', 'is', this)">Is</div>
+                                <div class="filter-option" onclick="selectFilterOption('staff', 'isNot', this)">Is Not</div>
+                                <div class="filter-option" onclick="selectFilterOption('staff', 'isEmpty', this)">Is Empty</div>
+                                <div class="filter-option" onclick="selectFilterOption('staff', 'isNotEmpty', this)">Is Not Empty</div>
+                                <div class="filter-option" onclick="selectFilterOption('staff', 'startsWith', this)">Starts With</div>
+                                <div class="filter-option" onclick="selectFilterOption('staff', 'endsWith', this)">Ends With</div>
+                            </div>
+                            <input type="hidden" id="staff-filter" value="contains">
+                        </div>
+                    </div>
+                    <div class="filter-input-group">
+                        <div class="tags-input-container" id="staff-tags-container" onclick="focusTagInput('staff')">
+                            <input type="text" id="staff-tags-input" placeholder="" onkeydown="handleTagInput(event, 'staff')">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="search-filter">
+                <label>
+                    <input type="checkbox" name="activityType" onchange="toggleFilterInputs('activityType')">
+                    Activity Type
+                </label>
+                <div class="filter-inputs" id="activityType-inputs">
+                    <div class="filter-input-group">
+                        <div class="filter-select-wrapper">
+                            <div class="filter-select" id="activityType-filter-display" onclick="toggleFilterDropdown('activityType')">
+                                <span id="activityType-filter-text">Contains</span>
+                                <svg class="filter-select-arrow" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 12">
+                                    <path fill="#6b7280" d="M6 9L1 4h10z"/>
+                                </svg>
+                            </div>
+                            <div class="filter-options" id="activityType-filter-options">
+                                <div class="filter-option " onclick="selectFilterOption('activityType', 'contains', this)">Contains</div>
+                                <div class="filter-option" onclick="selectFilterOption('activityType', 'is', this)">Is</div>
+                                <div class="filter-option" onclick="selectFilterOption('activityType', 'isNot', this)">Is Not</div>
+                                <div class="filter-option" onclick="selectFilterOption('activityType', 'isEmpty', this)">Is Empty</div>
+                                <div class="filter-option" onclick="selectFilterOption('activityType', 'isNotEmpty', this)">Is Not Empty</div>
+                                <div class="filter-option" onclick="selectFilterOption('activityType', 'startsWith', this)">Starts With</div>
+                                <div class="filter-option" onclick="selectFilterOption('activityType', 'endsWith', this)">Ends With</div>
+                            </div>
+                            <input type="hidden" id="activityType-filter" value="contains">
+                        </div>
+                    </div>
+                    <div class="filter-input-group">
+                        <div class="tags-input-container" id="activityType-tags-container" onclick="focusTagInput('activityType')">
+                            <input type="text" id="activityType-tags-input" placeholder="" onkeydown="handleTagInput(event, 'activityType')">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="search-filter">
+                <label>
+                    <input type="checkbox" name="location" onchange="toggleFilterInputs('location')">
+                    Location
+                </label>
+                <div class="filter-inputs" id="location-inputs">
+                    <div class="filter-input-group">
+                        <div class="filter-select-wrapper">
+                            <div class="filter-select" id="location-filter-display" onclick="toggleFilterDropdown('location')">
+                                <span id="location-filter-text">Contains</span>
+                                <svg class="filter-select-arrow" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 12">
+                                    <path fill="#6b7280" d="M6 9L1 4h10z"/>
+                                </svg>
+                            </div>
+                            <div class="filter-options" id="location-filter-options">
+                                <div class="filter-option " onclick="selectFilterOption('location', 'contains', this)">Contains</div>
+                                <div class="filter-option" onclick="selectFilterOption('location', 'is', this)">Is</div>
+                                <div class="filter-option" onclick="selectFilterOption('location', 'isNot', this)">Is Not</div>
+                                <div class="filter-option" onclick="selectFilterOption('location', 'isEmpty', this)">Is Empty</div>
+                                <div class="filter-option" onclick="selectFilterOption('location', 'isNotEmpty', this)">Is Not Empty</div>
+                                <div class="filter-option" onclick="selectFilterOption('location', 'startsWith', this)">Starts With</div>
+                                <div class="filter-option" onclick="selectFilterOption('location', 'endsWith', this)">Ends With</div>
+                            </div>
+                            <input type="hidden" id="location-filter" value="contains">
+                        </div>
+                    </div>
+                    <div class="filter-input-group">
+                        <div class="tags-input-container" id="location-tags-container" onclick="focusTagInput('location')">
+                            <input type="text" id="location-tags-input" placeholder="" onkeydown="handleTagInput(event, 'location')">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="search-filter">
+                <label>
+                    <input type="checkbox" name="activityNotes" onchange="toggleFilterInputs('activityNotes')">
+                    Activity Notes
+                </label>
+                <div class="filter-inputs" id="activityNotes-inputs">
+                    <div class="filter-input-group">
+                        <div class="filter-select-wrapper">
+                            <div class="filter-select" id="activityNotes-filter-display" onclick="toggleFilterDropdown('activityNotes')">
+                                <span id="activityNotes-filter-text">Contains</span>
+                                <svg class="filter-select-arrow" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 12">
+                                    <path fill="#6b7280" d="M6 9L1 4h10z"/>
+                                </svg>
+                            </div>
+                            <div class="filter-options" id="activityNotes-filter-options">
+                                <div class="filter-option " onclick="selectFilterOption('activityNotes', 'contains', this)">Contains</div>
+                                <div class="filter-option" onclick="selectFilterOption('activityNotes', 'is', this)">Is</div>
+                                <div class="filter-option" onclick="selectFilterOption('activityNotes', 'isNot', this)">Is Not</div>
+                                <div class="filter-option" onclick="selectFilterOption('activityNotes', 'isEmpty', this)">Is Empty</div>
+                                <div class="filter-option" onclick="selectFilterOption('activityNotes', 'isNotEmpty', this)">Is Not Empty</div>
+                                <div class="filter-option" onclick="selectFilterOption('activityNotes', 'startsWith', this)">Starts With</div>
+                                <div class="filter-option" onclick="selectFilterOption('activityNotes', 'endsWith', this)">Ends With</div>
+                            </div>
+                            <input type="hidden" id="activityNotes-filter" value="contains">
+                        </div>
+                    </div>
+                    <div class="filter-input-group">
+                        <div class="tags-input-container" id="activityNotes-tags-container" onclick="focusTagInput('activityNotes')">
+                            <input type="text" id="activityNotes-tags-input" placeholder="" onkeydown="handleTagInput(event, 'activityNotes')">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="search-filter">
+                <label>
+                    <input type="checkbox" name="healthAppointment" onchange="toggleFilterInputs('healthAppointment')">
+                    Health Appointment
+                </label>
+                <div class="filter-inputs" id="healthAppointment-inputs">
+                    <div class="filter-input-group">
+                        <div class="filter-select-wrapper">
+                            <div class="filter-select" id="healthAppointment-filter-display" onclick="toggleFilterDropdown('healthAppointment')">
+                                <span id="healthAppointment-filter-text">Contains</span>
+                                <svg class="filter-select-arrow" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 12">
+                                    <path fill="#6b7280" d="M6 9L1 4h10z"/>
+                                </svg>
+                            </div>
+                            <div class="filter-options" id="healthAppointment-filter-options">
+                                <div class="filter-option " onclick="selectFilterOption('healthAppointment', 'contains', this)">Contains</div>
+                                <div class="filter-option" onclick="selectFilterOption('healthAppointment', 'is', this)">Is</div>
+                                <div class="filter-option" onclick="selectFilterOption('healthAppointment', 'isNot', this)">Is Not</div>
+                                <div class="filter-option" onclick="selectFilterOption('healthAppointment', 'isEmpty', this)">Is Empty</div>
+                                <div class="filter-option" onclick="selectFilterOption('healthAppointment', 'isNotEmpty', this)">Is Not Empty</div>
+                                <div class="filter-option" onclick="selectFilterOption('healthAppointment', 'startsWith', this)">Starts With</div>
+                                <div class="filter-option" onclick="selectFilterOption('healthAppointment', 'endsWith', this)">Ends With</div>
+                            </div>
+                            <input type="hidden" id="healthAppointment-filter" value="contains">
+                        </div>
+                    </div>
+                    <div class="filter-input-group">
+                        <div class="tags-input-container" id="healthAppointment-tags-container" onclick="focusTagInput('healthAppointment')">
+                            <input type="text" id="healthAppointment-tags-input" placeholder="" onkeydown="handleTagInput(event, 'healthAppointment')">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+        
+        <div class="search-footer">
+            <button class="search-btn" onclick="performSearch()">Search</button>
+        </div>
+    </div>
+
+    <div class="calendar-container">
+        <div class="calendar-header">
+            <div class="view-toggle">
+                <button>Week</button>
+                <button class="active">Day</button>
+            </div>
+            
+            <div class="date-title">Wednesday, December 31, 2025</div>
+            
+            <div class="header-controls">
+                <button class="nav-btn" onclick="changeDay(-1)"> <i class="fa fa-angle-left" style="font-weight: bolder;" ></i> </button>
+                <button class="nav-btn" onclick="changeDay(1)"><i class="fa fa-angle-right" style="font-weight: bolder;" ></i></button>
+                <button class="nav-btn" onclick="goToday()">Today</button>
+                <button class="calendar-icon" onclick="toggleSearch()"><i class="fa fa-search fa-lg"></i></button>
+                <button class="calendar-icon" onclick="toggleMiniCalendar()"><i class="fa fa-calendar fa-lg"></i></button>
+            </div>
+        </div>
+
+        <div class="mini-calendar" id="miniCalendar">
+            <div class="mini-header">
+                <span id="miniMonthYear">DECEMBER 2025</span>
+                <div class="mini-nav">
+                    <button class="nav-btn" onclick="changeMiniMonth(-1)">‹</button>
+                    <button class="nav-btn" onclick="changeMiniMonth(1)">›</button>
+                </div>
+            </div>
+            <div class="mini-grid" id="miniGrid">
+                <div class="mini-day-label">SU</div>
+                <div class="mini-day-label">MO</div>
+                <div class="mini-day-label">TU</div>
+                <div class="mini-day-label">WE</div>
+                <div class="mini-day-label">TH</div>
+                <div class="mini-day-label">FR</div>
+                <div class="mini-day-label">SA</div>
+            </div>
+        </div>
+
+        <div class="calendar-wrapper">
+            <div class="hour-header" id="hourHeader"></div>
+
+            <div class="calendar-body">
+                <div class="calendar-grid" id="calendarGrid"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Snackbar for notifications -->
+    <div id="snackbar" class="snackbar"></div>
+
+    <script>
+        let currentDate = new Date();
+        let todayDate = new Date();
+        let draggedElement = null;
+        let draggedEventId = null;
+        let draggedEventData = null;
+        
+        // Maximum number of tags allowed per filter
+        const MAX_TAGS = 6;
+        
+        // Initial events database - this is only used to initialize the calendar
+        const initialEventDatabase = {
+            '2025-12-31': [
+                { id: 1, title: 'Team Meeting', startMinutes: 540, endMinutes: 630 }, // 9:00 AM - 10:30 AM
+                { id: 2, title: 'Project Review', startMinutes: 600, endMinutes: 720 }, // 10:00 AM - 12:00 PM (overlaps)
+                { id: 3, title: 'Lunch Break', startMinutes: 720, endMinutes: 780 }, // 12:00 PM - 1:00 PM
+                { id: 4, title: 'Client Call', startMinutes: 840, endMinutes: 900 }, // 2:00 PM - 3:00 PM
+                { id: 5, title: 'Code Review', startMinutes: 870, endMinutes: 960 }, // 2:30 PM - 4:00 PM (overlaps)
+                { id: 6, title: 'Documentation', startMinutes: 930, endMinutes: 1020 } // 3:30 PM - 5:00 PM (overlaps)
+            ],
+            '2025-12-25': [
+                { id: 1, title: 'Christmas Breakfast', startMinutes: 480, endMinutes: 540 }, // 8:00 AM - 9:00 AM
+                { id: 2, title: 'Gift Opening', startMinutes: 540, endMinutes: 660 }, // 9:00 AM - 11:00 AM
+                { id: 3, title: 'Dinner Prep', startMinutes: 780, endMinutes: 900 }, // 1:00 PM - 3:00 PM
+                { id: 4, title: 'Family Dinner', startMinutes: 1080, endMinutes: 1200 } // 6:00 PM - 8:00 PM
+            ]
+        };
+
+        // Working copy of events - this is what gets modified
+        let eventDatabase = JSON.parse(JSON.stringify(initialEventDatabase));
+
+        function getCurrentDateKey() {
+            const year = currentDate.getFullYear();
+            const month = String(currentDate.getMonth() + 1).padStart(2, '0');
+            const day = String(currentDate.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+
+        function getCurrentEvents() {
+            const dateKey = getCurrentDateKey();
+            return eventDatabase[dateKey] || [];
+        }
+
+        // Store tags for each filter
+        const filterTags = {
+            eType: [],
+            persons: [],
+            from: [],
+            to: [],
+            type: [],
+            service: [],
+            staff: [],
+            activityType: [],
+            location: [],
+            activityNotes: [],
+            healthAppointment: []
+        };
+
+        // Store filter values
+        const filterValues = {
+            eType: 'contains',
+            persons: 'contains',
+            from: 'contains',
+            to: 'contains',
+            type: 'contains',
+            service: 'contains',
+            staff: 'contains',
+            activityType: 'contains',
+            location: 'contains',
+            activityNotes: 'contains',
+            healthAppointment: 'contains'
+        };
+
+        // Snackbar function to show notifications
+        function showSnackbar(message) {
+            const snackbar = document.getElementById('snackbar');
+            snackbar.textContent = message;
+            snackbar.className = 'snackbar show';
+            
+            setTimeout(function() {
+                snackbar.className = snackbar.className.replace('show', '');
+            }, 3000);
+        }
+
+        function toggleFilterDropdown(filterName) {
+            const display = document.getElementById(`${filterName}-filter-display`);
+            const options = document.getElementById(`${filterName}-filter-options`);
+            
+            // Close all other dropdowns
+            document.querySelectorAll('.filter-options').forEach(opt => {
+                if (opt.id !== `${filterName}-filter-options`) {
+                    opt.classList.remove('active');
+                }
+            });
+            
+            document.querySelectorAll('.filter-select').forEach(sel => {
+                if (sel.id !== `${filterName}-filter-display`) {
+                    sel.classList.remove('active');
+                }
+            });
+            
+            // Toggle current dropdown
+            display.classList.toggle('active');
+            options.classList.toggle('active');
+        }
+
+        function selectFilterOption(filterName, value, element) {
+            // Update the hidden input
+            document.getElementById(`${filterName}-filter`).value = value;
+            filterValues[filterName] = value;
+            
+            // Update the display text
+            document.getElementById(`${filterName}-filter-text`).textContent = element.textContent;
+            
+            // Update selected state
+            const options = document.getElementById(`${filterName}-filter-options`);
+            options.querySelectorAll('.filter-option').forEach(opt => {
+                opt.classList.remove('selected');
+            });
+            element.classList.add('selected');
+            
+            // Show or hide tags input container based on filter type
+            const tagsContainer = document.getElementById(`${filterName}-tags-container`);
+            if (value === 'isEmpty' || value === 'isNotEmpty') {
+                tagsContainer.classList.add('hidden');
+            } else {
+                tagsContainer.classList.remove('hidden');
+            }
+            
+            // Close the dropdown
+            toggleFilterDropdown(filterName);
+        }
+
+        // Close dropdowns when clicking outside
+        document.addEventListener('click', function(event) {
+            if (!event.target.closest('.filter-select-wrapper')) {
+                document.querySelectorAll('.filter-options').forEach(opt => {
+                    opt.classList.remove('active');
+                });
+                document.querySelectorAll('.filter-select').forEach(sel => {
+                    sel.classList.remove('active');
+                });
+            }
+        });
+
+        function toggleSearch() {
+            const panel = document.getElementById('searchPanel');
+            const overlay = document.getElementById('searchOverlay');
+            
+            panel.classList.toggle('active');
+            overlay.classList.toggle('active');
+        }
+
+        function toggleFilterInputs(filterName) {
+            const checkbox = document.querySelector(`input[name="${filterName}"]`);
+            const inputs = document.getElementById(`${filterName}-inputs`);
+            
+            if (checkbox.checked) {
+                inputs.classList.add('active');
+            } else {
+                inputs.classList.remove('active');
+                // Clear the filter value
+                const hiddenInput = document.getElementById(`${filterName}-filter`);
+                if (hiddenInput) {
+                    hiddenInput.value = 'contains';
+                }
+                filterValues[filterName] = 'contains';
+                
+                // Reset display text
+                const displayText = document.getElementById(`${filterName}-filter-text`);
+                if (displayText) {
+                    displayText.textContent = 'Contains';
+                }
+                
+                // Reset selected option
+                const options = document.getElementById(`${filterName}-filter-options`);
+                if (options) {
+                    options.querySelectorAll('.filter-option').forEach(opt => {
+                        opt.classList.remove('selected');
+                        if (opt.textContent === 'Contains') {
+                            opt.classList.add('selected');
+                        }
+                    });
+                }
+                
+                // Show tags container (in case it was hidden)
+                const tagsContainer = document.getElementById(`${filterName}-tags-container`);
+                if (tagsContainer) {
+                    tagsContainer.classList.remove('hidden');
+                }
+                
+                // Clear tags
+                clearTags(filterName);
+            }
+        }
+
+        function focusTagInput(filterName) {
+            const input = document.getElementById(`${filterName}-tags-input`);
+            input.focus();
+        }
+
+        function handleTagInput(event, filterName) {
+            const input = event.target;
+            const value = input.value.trim();
+            
+            // Handle Enter key
+            if (event.key === 'Enter' && value) {
+                event.preventDefault();
+                
+                // Check if we've reached the maximum number of tags
+                if (filterTags[filterName].length >= MAX_TAGS) {
+                    showSnackbar(`Maximum ${MAX_TAGS} tags allowed per filter. Please remove a tag before adding more.`);
+                    input.value = ''; // Clear the input
+                    return;
+                }
+                
+                addTag(filterName, value);
+                input.value = '';
+            }
+            
+            // Handle Backspace on empty input
+            if (event.key === 'Backspace' && !value && filterTags[filterName].length > 0) {
+                event.preventDefault();
+                removeTag(filterName, filterTags[filterName].length - 1);
+            }
+        }
+
+        function addTag(filterName, text) {
+            if (!text || filterTags[filterName].includes(text)) return;
+            
+            // Check if we've reached the maximum number of tags
+            if (filterTags[filterName].length >= MAX_TAGS) {
+                return;
+            }
+            
+            filterTags[filterName].push(text);
+            renderTags(filterName);
+        }
+
+        function removeTag(filterName, index) {
+            filterTags[filterName].splice(index, 1);
+            renderTags(filterName);
+        }
+
+        function clearTags(filterName) {
+            filterTags[filterName] = [];
+            renderTags(filterName);
+        }
+
+        function renderTags(filterName) {
+            const container = document.getElementById(`${filterName}-tags-container`);
+            const input = document.getElementById(`${filterName}-tags-input`);
+            
+            if (!container || !input) {
+                console.error(`Container or input not found for ${filterName}`);
+                return;
+            }
+            
+            // Remove all existing tags
+            const existingTags = container.querySelectorAll('.tag');
+            existingTags.forEach(tag => tag.remove());
+            
+            // Add new tags
+            filterTags[filterName].forEach((text, index) => {
+                const tag = document.createElement('span');
+                tag.className = 'tag';
+                
+                const textSpan = document.createElement('span');
+                textSpan.textContent = text;
+                
+                const removeBtn = document.createElement('button');
+                removeBtn.className = 'tag-remove';
+                removeBtn.textContent = '×';
+                removeBtn.onclick = function(e) {
+                    e.stopPropagation();
+                    removeTag(filterName, index);
+                };
+                
+                tag.appendChild(textSpan);
+                tag.appendChild(removeBtn);
+                container.insertBefore(tag, input);
+            });
+        }
+
+        function performSearch() {
+            // Get all checked filters
+            const checkboxes = document.querySelectorAll('.search-filter input[type="checkbox"]:checked');
+            const filters = [];
+            
+            checkboxes.forEach(checkbox => {
+                const filterName = checkbox.name;
+                const filterType = document.getElementById(`${filterName}-filter`).value;
+                const tags = filterTags[filterName];
+                
+                filters.push({
+                    field: filterName,
+                    filterType: filterType,
+                    searchValues: tags
+                });
+            });
+            
+            // Create the final JSON object
+            const searchQuery = {
+                filters: filters,
+                timestamp: new Date().toISOString(),
+                totalFilters: filters.length
+            };
+            
+            // Log the JSON to console
+            console.log('=== SEARCH QUERY JSON ===');
+            console.log(JSON.stringify(searchQuery, null, 2));
+            
+           
+            toggleSearch();
+            
+            return searchQuery;
+        }
+
+        function init() {
+            console.log('=== CALENDAR INITIALIZED ===');
+            renderHourHeaders();
+            renderGrid();
+            updateDateTitle();
+            renderEvents();
+            renderMiniCalendar();
+        }
+
+        function renderHourHeaders() {
+            const header = document.getElementById('hourHeader');
+            if (!header) {
+                console.error('hourHeader element not found');
+                return;
+            }
+            header.innerHTML = '';
+            
+            for (let i = 0; i < 24; i++) {
+                const label = document.createElement('div');
+                label.className = 'hour-label';
+                const hour = i % 12 || 12;
+                const period = i < 12 ? 'am' : 'pm';
+                label.textContent = `${hour}${period}`;
+                header.appendChild(label);
+            }
+        }
+
+        function renderGrid() {
+            const grid = document.getElementById('calendarGrid');
+            if (!grid) {
+                console.error('calendarGrid element not found');
+                return;
+            }
+            grid.innerHTML = '';
+            
+            for (let h = 0; h < 24; h++) {
+                const hourCol = document.createElement('div');
+                hourCol.className = 'hour-column';
+                hourCol.dataset.hour = h;
+                
+                // Create visual grid lines
+                const innerGrid = document.createElement('div');
+                innerGrid.className = 'hour-column-inner';
+                for (let i = 0; i < 4; i++) {
+                    const line = document.createElement('div');
+                    line.className = 'quarter-line';
+                    innerGrid.appendChild(line);
+                }
+                hourCol.appendChild(innerGrid);
+                
+                // Create interactive quarter slots for drop zones
+                for (let q = 0; q < 4; q++) {
+                    const slot = document.createElement('div');
+                    slot.className = 'quarter-slot';
+                    slot.dataset.hour = h;
+                    slot.dataset.quarter = q;
+                    
+                    slot.addEventListener('dragover', handleDragOver);
+                    slot.addEventListener('drop', handleDrop);
+                    slot.addEventListener('dragleave', handleDragLeave);
+                    
+                    hourCol.appendChild(slot);
+                }
+                
+                grid.appendChild(hourCol);
+            }
+            
+            // Create a single events container that spans the entire grid
+            const eventsContainer = document.createElement('div');
+            eventsContainer.className = 'events-container';
+            eventsContainer.id = 'eventsContainer';
+            grid.appendChild(eventsContainer);
+        }
+
+        // Detect overlapping events and assign rows (vertical stacking)
+        function calculateEventLayout(events) {
+            console.log("This is");
+            
+            if (events.length === 0) return [];
+            
+            const sorted = [...events].sort((a, b) => a.startMinutes - b.startMinutes);
+            const rows = [];
+            
+            sorted.forEach(event => {
+                // Find a row where this event fits (no overlap)
+                let placed = false;
+                for (let i = 0; i < rows.length; i++) {
+                    const row = rows[i];
+                    const lastEvent = row[row.length - 1];
+                    
+                    // Check if this event starts after the last event in this row ends
+                    if (event.startMinutes >= lastEvent.endMinutes) {
+                        row.push(event);
+                        event.row = i;
+                        placed = true;
+                        break;
+                    }
+                }
+                
+                // If no row found, create a new one
+                if (!placed) {
+                    event.row = rows.length;
+                    rows.push([event]);
+                }
+            });
+            
+            return sorted;
+        }
+
+        function renderEvents() {
+            console.log('===== RENDER EVENTS CALLED =====');
+            
+            // Get the single events container
+            const eventsContainer = document.getElementById('eventsContainer');
+            if (!eventsContainer) {
+                console.error('Events container not found');
+                return;
+            }
+            
+            // Clear all existing events
+            eventsContainer.innerHTML = '';
+            
+            const todaysEvents = getCurrentEvents();
+            const dateKey = getCurrentDateKey();
+            
+            console.log('Current Date:', currentDate.toDateString());
+            console.log('Date Key:', dateKey);
+            console.log('Events Found:', todaysEvents.length);
+            
+            if (todaysEvents.length === 0) {
+                console.log('✓ No events to render');
+                return;
+            }
+            
+            // Calculate layout for overlapping events (assigns rows)
+            const eventsWithLayout = calculateEventLayout(todaysEvents);
+            
+            const eventHeight = 60; // Fixed height for each event in pixels
+            const eventGap = 4; // Gap between stacked events
+            const hourWidth = 100; // Width of each hour column in pixels
+            
+            // Render each event
+            eventsWithLayout.forEach((evt, index) => {
+                const startHour = Math.floor(evt.startMinutes / 60);
+                const startMinute = evt.startMinutes % 60;
+                const durationInMinutes = evt.endMinutes - evt.startMinutes;
+                
+                const element = document.createElement('div');
+                element.className = 'event';
+                element.draggable = true;
+                element.dataset.eventId = evt.id;
+                
+                // Calculate absolute horizontal position from the start of the grid (hour 0)
+                const leftPosition = (startHour * hourWidth) + ((startMinute / 60) * hourWidth);
+                
+                // Calculate vertical position
+                // The top should be calculated based on the minute within the hour ONLY
+                // Since each hour column is the same height, we position within that hour
+                // But we need to account for which row (for overlapping events)
+                const top = (evt.row * (eventHeight + eventGap));
+                
+                // Width: total duration in pixels
+                const totalWidth = (durationInMinutes / 60) * hourWidth;
+                
+                element.style.top = `${top}px`;
+                element.style.height = `${eventHeight}px`;
+                element.style.left = `${leftPosition}px`;
+                element.style.width = `${totalWidth}px`;
+                element.style.minWidth = '80px';
+                
+                element.innerHTML = `
+                    <div class="event-title">${evt.title}</div>
+                    <div class="event-time">${formatTimeRange(evt.startMinutes, evt.endMinutes)}</div>
+                `;
+                
+                element.addEventListener('dragstart', handleDragStart);
+                element.addEventListener('dragend', handleDragEnd);
+                
+                eventsContainer.appendChild(element);
+                console.log(`✓ Event ${index + 1} rendered:`, evt.title, `at row ${evt.row}, left: ${leftPosition}px, top: ${top}px, width: ${totalWidth}px`);
+            });
+            
+            console.log('===== RENDER COMPLETE =====');
+        }
+
+        function formatTimeRange(startMinutes, endMinutes) {
+            const start = minutesToTime(startMinutes);
+            const end = minutesToTime(endMinutes);
+            
+            const startHour = start.hour % 12 || 12;
+            const startPeriod = start.hour < 12 ? 'AM' : 'PM';
+            const endHour = end.hour % 12 || 12;
+            const endPeriod = end.hour < 12 ? 'AM' : 'PM';
+            
+            return `${startHour}:${start.minute.toString().padStart(2, '0')} ${startPeriod} - ${endHour}:${end.minute.toString().padStart(2, '0')} ${endPeriod}`;
+        }
+
+        function minutesToTime(minutes) {
+            const hour = Math.floor(minutes / 60);
+            const minute = minutes % 60;
+            return { hour, minute };
+        }
+
+        function handleDragStart(e) {
+            draggedElement = e.currentTarget;
+            draggedEventId = parseInt(e.currentTarget.dataset.eventId);
+            
+            // Store the event data
+            const dateKey = getCurrentDateKey();
+            const events = eventDatabase[dateKey] || [];
+            draggedEventData = events.find(evt => evt.id === draggedEventId);
+            
+            e.currentTarget.classList.add('dragging');
+            e.dataTransfer.effectAllowed = 'move';
+            
+            console.log('Drag started for event:', draggedEventData);
+        }
+
+        function handleDragEnd(e) {
+            e.currentTarget.classList.remove('dragging');
+            
+            // Clear highlights
+            document.querySelectorAll('.drop-highlight').forEach(el => {
+                el.classList.remove('drop-highlight');
+            });
+            
+            draggedElement = null;
+            draggedEventId = null;
+            draggedEventData = null;
+        }
+
+        function handleDragOver(e) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+            
+            const slot = e.currentTarget;
+            if (!slot.classList.contains('drop-highlight')) {
+                document.querySelectorAll('.drop-highlight').forEach(el => {
+                    el.classList.remove('drop-highlight');
+                });
+                slot.classList.add('drop-highlight');
+            }
+        }
+
+        function handleDragLeave(e) {
+            if (!e.currentTarget.contains(e.relatedTarget)) {
+                e.currentTarget.classList.remove('drop-highlight');
+            }
+        }
+
+        function handleDrop(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            const slot = e.currentTarget;
+            slot.classList.remove('drop-highlight');
+            
+            if (!draggedElement || !draggedEventId || !draggedEventData) return;
+            
+            const newHour = parseInt(slot.dataset.hour);
+            const newQuarter = parseInt(slot.dataset.quarter);
+            const newStartMinutes = newHour * 60 + newQuarter * 15;
+            
+            // Calculate the duration of the event
+            const duration = draggedEventData.endMinutes - draggedEventData.startMinutes;
+            
+            // Update ONLY this event in the database
+            const dateKey = getCurrentDateKey();
+            if (!eventDatabase[dateKey]) {
+                eventDatabase[dateKey] = [];
+            }
+            
+            const eventIndex = eventDatabase[dateKey].findIndex(ev => ev.id === draggedEventId);
+            if (eventIndex !== -1) {
+                // Update only the specific event
+                eventDatabase[dateKey][eventIndex] = {
+                    ...eventDatabase[dateKey][eventIndex],
+                    startMinutes: newStartMinutes,
+                    endMinutes: newStartMinutes + duration
+                };
+                
+                console.log('Event updated:', eventDatabase[dateKey][eventIndex]);
+                console.log('New time:', formatTimeRange(newStartMinutes, newStartMinutes + duration));
+            }
+            
+            // Re-render all events to recalculate row positions
+            renderEvents();
+        }
+
+        function changeDay(delta) {
+            currentDate.setDate(currentDate.getDate() + delta);
+            updateDateTitle();
+            renderEvents();
+            renderMiniCalendar();
+        }
+
+        function goToday() {
+            currentDate = new Date();
+            todayDate = new Date();
+            updateDateTitle();
+            renderEvents();
+            renderMiniCalendar();
+        }
+
+        function updateDateTitle() {
+            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            const dateString = currentDate.toLocaleDateString('en-US', options);
+            document.querySelector('.date-title').textContent = dateString;
+            
+            const dateKey = getCurrentDateKey();
+            const eventCount = getCurrentEvents().length;
+            console.log('DATE CHANGED TO:', dateString);
+            console.log('Date Key:', dateKey);
+            console.log('Events for this date:', eventCount);
+        }
+
+        function toggleMiniCalendar() {
+            document.getElementById('miniCalendar').classList.toggle('active');
+        }
+
+        function renderMiniCalendar() {
+            const grid = document.getElementById('miniGrid');
+            const monthYear = document.getElementById('miniMonthYear');
+            
+            const month = currentDate.getMonth();
+            const year = currentDate.getFullYear();
+            monthYear.textContent = `${new Date(year, month).toLocaleString('en-US', { month: 'long', year: 'numeric' }).toUpperCase()}`;
+            
+            const existingDays = grid.querySelectorAll('.mini-day');
+            existingDays.forEach(day => day.remove());
+            
+            const firstDay = new Date(year, month, 1).getDay();
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            const prevMonthDays = new Date(year, month, 0).getDate();
+            
+            // Previous month days
+            for (let i = firstDay - 1; i >= 0; i--) {
+                const day = document.createElement('div');
+                day.className = 'mini-day other-month';
+                day.textContent = prevMonthDays - i;
+                grid.appendChild(day);
+            }
+            
+            // Current month days
+            for (let i = 1; i <= daysInMonth; i++) {
+                const day = document.createElement('div');
+                day.className = 'mini-day';
+                day.textContent = i;
+                day.dataset.day = i;
+                day.dataset.month = month;
+                day.dataset.year = year;
+                
+                if (i === todayDate.getDate() && 
+                    month === todayDate.getMonth() && 
+                    year === todayDate.getFullYear()) {
+                    day.classList.add('today');
+                }
+                
+                if (i === currentDate.getDate() && 
+                    month === currentDate.getMonth() && 
+                    year === currentDate.getFullYear()) {
+                    day.classList.add('selected');
+                }
+                
+                day.addEventListener('click', function() {
+                    selectDate(parseInt(this.dataset.day), parseInt(this.dataset.month), parseInt(this.dataset.year));
+                });
+                
+                grid.appendChild(day);
+            }
+            
+            // Next month days
+            const remainingSlots = 42 - (firstDay + daysInMonth);
+            for (let i = 1; i <= remainingSlots; i++) {
+                const day = document.createElement('div');
+                day.className = 'mini-day other-month';
+                day.textContent = i;
+                grid.appendChild(day);
+            }
+        }
+
+        function selectDate(day, month, year) {
+            currentDate = new Date(year, month, day);
+            updateDateTitle();  
+            renderEvents();        
+            renderMiniCalendar();
+            toggleMiniCalendar();
+        }
+
+        function changeMiniMonth(delta) {
+            currentDate.setMonth(currentDate.getMonth() + delta);
+            renderMiniCalendar();
+        }
+
+        document.addEventListener('click', (e) => {
+            const miniCal = document.getElementById('miniCalendar');
+            const calIcon = document.querySelector('.calendar-icon');
+            if (miniCal && calIcon && miniCal.classList.contains('active') && 
+                !miniCal.contains(e.target) && 
+                !calIcon.contains(e.target)) {
+                miniCal.classList.remove('active');
+            }
+        });
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', init);
+        } else {
+            init();
+        }
+    </script>
+</body>
+</html>
